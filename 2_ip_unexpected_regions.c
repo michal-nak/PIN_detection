@@ -3,116 +3,193 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <execinfo.h>  // Added for backtrace functions
 
-// Detect if IP (return address) lies in an unexpected executable memory region
-void detect_ip_unexpected_region(void *retaddr) {
-    printf("[2/9] IP in Unexpected Memory Regions ... ");
+typedef struct {
+    uintptr_t start;
+    uintptr_t end;
+    bool is_anon;
+    bool is_exec;
+    char path[256];
+} MemoryRegion;
 
-    unsigned long ip = (unsigned long)retaddr;
-    printf("[DEBUG] IP (caller address): 0x%lx\n", ip);
+#define MAX_REGIONS 256
+MemoryRegion regions[MAX_REGIONS];
+int region_count = 0;
 
+void load_memory_regions() {
     FILE *maps = fopen("/proc/self/maps", "r");
     if (!maps) {
-        perror("[!] Failed to open /proc/self/maps");
+        perror("Failed to open /proc/self/maps");
         return;
     }
 
     char line[512];
-    int found = 0;
-    int anon_exec = 0;
+    region_count = 0;
 
-    while (fgets(line, sizeof(line), maps)) {
-        printf("Parsing line: %s", line);
-
-        if (strchr(line, '-') == NULL) continue;
-
-        unsigned long start = 0, end = 0;
+    while (fgets(line, sizeof(line), maps) && region_count < MAX_REGIONS) {
         char perms[5] = {0};
+        regions[region_count].path[0] = '\0';
 
-        int res = sscanf(line, "%lx-%lx %4c", &start, &end, perms);
-        if (res != 3) {
-            printf("sscanf failed\n");
-            continue;
-        }
-        perms[4] = '\0';  // ensure null termination
+        int res = sscanf(line, "%lx-%lx %4s %*s %*s %*s %255s", 
+                        &regions[region_count].start, 
+                        &regions[region_count].end,
+                        perms,
+                        regions[region_count].path);
+        
+        if (res < 3) continue;
 
-        if (strchr(perms, 'x')) {
-            if (ip >= start && ip < end) {
-                found = 1;
-                if (!strchr(line, '/')) {
-                    anon_exec = 1;
-                }
-                break;
-            }
-        }
+        regions[region_count].is_anon = (regions[region_count].path[0] == '\0');
+        regions[region_count].is_exec = (strchr(perms, 'x') != NULL);
+        region_count++;
     }
 
     fclose(maps);
+}
 
-    if (found) {
-        if (anon_exec) {
-            printf("[DBI Detected: IP 0x%lx in anonymous executable region]\n", ip);
-        } else {
-            printf("[OK] IP 0x%lx in expected code region\n", ip);
+bool is_in_main_executable(uintptr_t addr) {
+    static bool main_exe_checked = false;
+    static uintptr_t main_exe_start = 0, main_exe_end = 0;
+    
+    if (!main_exe_checked) {
+        // Get our own executable path
+        char exe_path[1024];
+        ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path)-1);
+        if (len != -1) {
+            exe_path[len] = '\0';
+            for (int i = 0; i < region_count; i++) {
+                if (regions[i].is_exec && strstr(regions[i].path, exe_path)) {
+                    main_exe_start = regions[i].start;
+                    main_exe_end = regions[i].end;
+                    break;
+                }
+            }
         }
-    } else {
-        printf("[DBI Detected: IP 0x%lx outside any mapped executable region]\n", ip);
+        main_exe_checked = true;
     }
+    
+    return (addr >= main_exe_start && addr < main_exe_end);
+}
+
+bool is_in_known_library(uintptr_t addr) {
+    const char *known_libs[] = {
+        "libc.so", "ld-linux", "libpthread", "libm.so", "libdl.so",
+        "libstdc++", "libgcc_s", "[vdso]", "[vsyscall]", NULL
+    };
+
+    for (int i = 0; i < region_count; i++) {
+        if (regions[i].is_exec) {
+            for (const char **lib = known_libs; *lib; lib++) {
+                if (strstr(regions[i].path, *lib)) {
+                    if (addr >= regions[i].start && addr < regions[i].end) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool is_likely_pin_jit(uintptr_t addr) {
+    // Check if we're in any anonymous executable region
+    for (int i = 0; i < region_count; i++) {
+        if (regions[i].is_exec && regions[i].is_anon) {
+            if (addr >= regions[i].start && addr < regions[i].end) {
+                // Additional checks for PIN characteristics:
+                // 1. Large size (> 1MB)
+                // 2. High memory address (> 0x700000000000)
+                size_t size = regions[i].end - regions[i].start;
+                if (size > 0x100000 && regions[i].start > 0x700000000000) {
+                    return true;
+                }
+                
+                // Check for adjacent executable regions
+                int adjacent_exec = 0;
+                for (int j = 0; j < region_count; j++) {
+                    if (regions[j].is_exec && regions[j].is_anon) {
+                        if ((regions[j].start == regions[i].end) || 
+                            (regions[j].end == regions[i].start)) {
+                            adjacent_exec++;
+                        }
+                    }
+                }
+                if (adjacent_exec > 1) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool check_call_stack() {
+    void *buffer[10];
+    int frames = backtrace(buffer, 10);
+    if (frames <= 0) return false;
+
+    char **symbols = backtrace_symbols(buffer, frames);
+    if (!symbols) return false;
+
+    bool pin_detected = false;
+    for (int i = 0; i < frames; i++) {
+        if (strstr(symbols[i], "pin") || strstr(symbols[i], "PIN_")) {
+            pin_detected = true;
+            break;
+        }
+    }
+    free(symbols);
+    
+    return pin_detected;
 }
 
 __attribute__((noinline)) 
-__attribute__((noreturn))
-__attribute__((force_align_arg_pointer))
-void trampoline(void *retaddr) {
-    // Check stack alignment:
-    uintptr_t sp = (uintptr_t)__builtin_frame_address(0);
-    printf("[trampoline] stack pointer mod 16 = %lu\n", sp % 16);
+void check_for_dbi() {
+    load_memory_regions();
+    void *retaddr = __builtin_return_address(0);
+    uintptr_t ip = (uintptr_t)retaddr;
 
-    detect_ip_unexpected_region(retaddr);
-    printf("Exiting trampoline\n");
-    exit(0);
-}
+    printf("Checking IP: 0x%lx\n", ip);
+    printf("Memory regions scanned: %d\n", region_count);
 
-__attribute__((force_align_arg_pointer))
-void call_generated_code(void (*fn)()) {
-    fn();
-}
-
-void simulate_code_cache() {
-    void *mem = mmap(NULL, 4096, PROT_READ | PROT_WRITE | PROT_EXEC,
-                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (mem == MAP_FAILED) {
-        perror("mmap");
-        return;
+    // Debug output for anonymous executable regions
+    for (int i = 0; i < region_count; i++) {
+        if (regions[i].is_exec && regions[i].is_anon) {
+            printf("Anonymous executable region: 0x%lx-0x%lx (size: 0x%lx)\n",
+                   regions[i].start, regions[i].end,
+                   regions[i].end - regions[i].start);
+        }
     }
 
-    unsigned char *p = (unsigned char *)mem;
+    if (check_call_stack()) {
+        printf("[PIN DETECTED] Found PIN in call stack!\n");
+        exit(1);
+    }
+    else if (is_likely_pin_jit(ip)) {
+        printf("[PIN DETECTED] IP 0x%lx is in PIN JIT region!\n", ip);
+        exit(1);
+    }
+    else if (is_in_main_executable(ip)) {
+        printf("[OK] IP 0x%lx is in main executable\n", ip);
+    }
+    else if (is_in_known_library(ip)) {
+        printf("[OK] IP 0x%lx is in known library\n", ip);
+    }
+    else {
+        printf("[WARNING] IP 0x%lx is in unexpected region\n", ip);
+    }
+}
 
-    // movabs rdi, <ret_addr>
-    p[0] = 0x48; p[1] = 0xBF;
-    unsigned long ret_addr = (unsigned long)(p + 13); // address after ret
-    memcpy(p + 2, &ret_addr, sizeof(ret_addr)); // 8 bytes
-
-    // movabs rax, <trampoline>
-    p[10] = 0x48; p[11] = 0xB8;
-    unsigned long tramp_addr = (unsigned long)trampoline;
-    memcpy(p + 12, &tramp_addr, sizeof(tramp_addr)); // 8 bytes
-
-    // call rax
-    p[20] = 0xFF; p[21] = 0xD0;
-
-    // ret (for completeness)
-    p[22] = 0xC3;
-
-    printf("Calling trampoline via generated code at %p\n", mem);
-
-    void (*func)() = (void (*)())mem;
-    call_generated_code(func);
-
-    munmap(mem, 4096);
+void target_function() {
+    printf("This is a normal function\n");
+    check_for_dbi();
 }
 
 int main() {
-    simulate_code_cache();
+    printf("Starting DBI detection test...\n");
+    target_function();
+    printf("Test completed\n");
     return 0;
 }
