@@ -1,0 +1,20 @@
+void detect_mem_perm_mismatch() {
+    printf("[4/9] Memory Region Permission Mismatches ... ");
+
+    FILE *maps = fopen("/proc/self/maps", "r");
+    char line[256];
+    int suspicious = 0;
+
+    while (fgets(line, sizeof(line), maps)) {
+        if (strstr(line, "rwxp")) {
+            suspicious = 1;
+            break;
+        }
+    }
+    fclose(maps);
+
+    if (suspicious)
+        printf("[DBI Detected: RWX page found]\n");
+    else
+        printf("[OK]\n");
+}
