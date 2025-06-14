@@ -20,7 +20,7 @@ int read_mem_region(int mem_fd, unsigned long start, unsigned long end, unsigned
 }
 
 void detect_code_cache_fingerprint() {
-    printf("[Code Cache Fingerprint Detection]\n");
+    printf("[1/9] Code Cache Fingerprint Detection]\n");
 
     FILE *maps = fopen("/proc/self/maps", "r");
     if (!maps) {

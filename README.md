@@ -8,7 +8,7 @@ The recent paper "Evasion and Countermeasures Techniques to Detect Dynamic Binar
 The diffent techniques are as follows:
 
 1. Detect_code_cache_fingerprint
-2. detect_ip_unexpected_region();
+2. detect_ip_unexpected_region
 3. detect_smc();
 4. detect_mem_perm_mismatch();
 5. detect_process_hierarchy();
