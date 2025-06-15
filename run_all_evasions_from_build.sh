@@ -1,6 +1,39 @@
 #!/bin/bash
+#
+# run_all_evasions_from_build.sh - Run all DBI evasion techniques (assumes already compiled) natively and under Intel PIN.
+#
+# Usage:
+#   ./run_all_evasions_from_build.sh [-h|--help]
+#
+# Options:
+#   -h, --help   Show this help message and exit
+#
+# PIN path is read from pin.conf or the PIN environment variable. See README.md for details.
+#
+# Example:
+#   ./run_all_evasions_from_build.sh
+
 set -e
 cd "$(dirname "$0")"
+
+# Help/usage
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    grep '^#' "$0" | head -20 | sed 's/^# //;s/^#//'
+    exit 0
+fi
+
+# Load PIN path from environment or pin.conf if available
+if [ -f ./pin.conf ]; then
+    source ./pin.conf
+fi
+PIN=${PIN:-~/forensics/pin-external-3.31-98869-gfa6f126a8-gcc-linux/pin}
+TOOL=$PIN/../source/tools/SimpleExamples/obj-intel64/opcodemix.so
+
+if [[ ! -x "$PIN" ]]; then
+    echo "[ERROR] Intel PIN not found or not executable at: $PIN"
+    echo "Edit pin.conf or set the PIN environment variable. See README.md."
+    exit 1
+fi
 
 BINS=(
     1_code_cache_fingerprint
@@ -13,9 +46,6 @@ BINS=(
     8_excessive_access_mempage
     9_perf_degradation
 )
-
-PIN=~/forensics/pin-external-3.31-98869-gfa6f126a8-gcc-linux/pin
-TOOL=$PIN/../source/tools/SimpleExamples/obj-intel64/opcodemix.so
 
 NATIVE_RESULTS=()
 PIN_RESULTS=()

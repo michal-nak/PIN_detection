@@ -6,6 +6,11 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+// This code detects if the current process is running under Intel PIN by checking the instruction pointer (IP) against known characteristics of PIN's code cache regions.
+// It checks if the IP is in the original executable text section or in PIN's code cache regions, which are typically large anonymous executable memory regions.
+// I have managed to always catch when the cache is large but it never catches the IP in the cache.
+
+
 int verbose = 0;
 #define VPRINT(fmt, ...) do { if (verbose) fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
 
