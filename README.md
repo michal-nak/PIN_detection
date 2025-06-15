@@ -49,17 +49,18 @@ The recent paper "Evasion and Countermeasures Techniques to Detect Dynamic Binar
 
 The different techniques are as follows:
 
-1. code_cache_fingerprint.c
+1. Code Cache Fingerprints
 2. IP in Unexpected Memory Regions
 3. Incorrect Handling of Self-Modifying Code (SMC)
-4. memory_permission_mismatch.c
-5. process_hierarchy.c
-6. incorrect_assembly_emulation.c
-7. system_library_hooks.c
-8. excessive_access_mempage.c
-9. perf_degradation.c
+4. Memory Region Permission Mismatches
+5. Process Hierarchy
+6. Incorrect Emulation of Supported Assembly Instructions
+7. System Library Hooks
+8. Excessive Number of Full Access Memory Pages
+9. Performance Degradation
 
 This project was very enjoyable however, more time would have been welcome as in the current state, 6/9 evasion techniques work. 2 `IP in Unexpected Memory Regions` has trouble detecting when it is not in the expected cache. 3 `Incorrect Handling of Self-Modifying Code (SMC)` I'm not entirely sure how the self-modfying code is supposed to be altered incorrectly (I spent by far the most time on this, downgrading PIN, looking into valgrind, downgrading valgrind and its dependencies and even starting writing my own basic DBI to understand better where it might come from). Finally, I could never get close to  making 6 `Incorrect Emulation of Supported Assembly Instructions` work as I wasn't sure what kind of instrcutions could be ran on a modern computer but not in PIN, especially considering my CPU is an Intel one.
+Overall, a pretty fun experience, especially with the malware engineer mindeset (what code can I write to infect as many machines as possible?) and will definitely try to work on this more once the exam session is done.
 
 ---
 
