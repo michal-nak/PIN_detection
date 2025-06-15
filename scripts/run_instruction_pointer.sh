@@ -5,10 +5,12 @@ TOOL=$PIN/../source/tools/SimpleExamples/obj-intel64/opcodemix.so
 BIN=./2_ip_unexpected_regions
 
 echo "Compiling..."
-gcc -o $BIN ./2_ip_unexpected_regions.c -rdynamic
+gcc -o $BIN ./2_ip_unexpected_regions.c -rdynamic -O0
 
-echo "Running natively..."
+echo "[TEST 1] Running natively..."
 $BIN
 
-echo "Running under PIN..."
+echo "------------------------------------------"
+
+echo "[TEST 2] Running under PIN..."
 $PIN -t $TOOL -- $BIN
