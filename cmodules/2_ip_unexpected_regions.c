@@ -81,34 +81,38 @@ bool is_in_pin_cache(uintptr_t ip) {
     }
     fclose(maps);
     VPRINT("[DEBUG] is_in_pin_cache: has_large_anon_exec=%d, ip_in_anon_exec=%d\n", has_large_anon_exec, ip_in_anon_exec);
-    return has_large_anon_exec; //&& ip_in_anon_exec
+    return has_large_anon_exec && ip_in_anon_exec;
 }
 
-void detect_pin() {
+// Return 1 if PIN detected, 0 otherwise
+int detect_pin() {
     uintptr_t ip = get_ip();
-    printf("Current IP: 0x%lx\n", ip);
+    printf("[2/9] Instruction Pointer Unexpected Regions ... \n");
     VPRINT("[DEBUG] Running detect_pin: IP=0x%lx\n", ip);
     bool in_text = is_in_original_text(ip);
     bool in_pin = is_in_pin_cache(ip);
     VPRINT("[DEBUG] detect_pin: in_text=%d, in_pin=%d\n", in_text, in_pin);
     if (!in_text || in_pin) {
-        printf("[PIN DETECTED] Execution outside original text (IP: 0x%lx)\n", ip);
-        exit(1);
+        printf("[2/9] [DBI Detected] Execution outside original text (IP: 0x%lx)\n", ip);
+        return 1;
     }
-    printf("[OK] Execution in original text section\n");
+    printf("[2/9] [OK] Execution in original text section\n");
+    return 0;
 }
 
 __attribute__((noinline))
-void instrumented_function() {
-    printf("Checking if this function can be instrumented\n");
-    detect_pin();
+void instrumented_function(int *detected) {
+    printf("[2/9] Checking if this function can be instrumented\n");
+    int res = detect_pin();
+    if (res) *detected = 1;
 }
 
 int main(int argc, char **argv) {
     if (argc > 1 && strcmp(argv[1], "-v") == 0) verbose = 1;
-    printf("Starting direct PIN detection test...\n");
-    detect_pin();
-    instrumented_function();
-    printf("Test completed\n");
-    return 0;
+    printf("[2/9] Starting direct PIN detection test...\n");
+    int detected = 0;
+    if (detect_pin()) detected = 1;
+    instrumented_function(&detected);
+    printf("[2/9] Test completed\n");
+    return detected;
 }

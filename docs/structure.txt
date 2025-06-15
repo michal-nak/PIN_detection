@@ -1,0 +1,10 @@
+cmodules/   - All C source files for evasion techniques
+cmodules/bin/ - Compiled binaries for each technique
+cmodules/legacy/ - Old/experimental C code
+scripts/    - All shell scripts for compiling and running tests
+include/    - Shared headers (if any)
+docs/       - Documentation
+build/      - Build artifacts (if used)
+tests/      - Test scripts or test data (if used)
+utils/      - Utility scripts
+data/       - Data files (if used)

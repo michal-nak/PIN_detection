@@ -6,7 +6,7 @@ int verbose = 0;
 #define VPRINT(fmt, ...) do { if (verbose) fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
 
 void detect_excessive_full_access_pages() {
-    printf("[8/9] Excessive RWX Pages ... ");
+    printf("[8/9] Excessive RWX Pages ... \n");
 
     FILE *maps = fopen("/proc/self/maps", "r");
     if (!maps) {
@@ -26,10 +26,11 @@ void detect_excessive_full_access_pages() {
     fclose(maps);
 
     if (rwx_count > 1) // Adjust threshold as needed
-        printf("[DBI Detected: Excessive RWX pages: %d found]\n", rwx_count);
+        printf("[8/9] [DBI Detected: Excessive RWX pages: %d found]\n", rwx_count);
     else
-        printf("[OK]\n");
+        printf("[8/9] [OK]\n");
     if (verbose) VPRINT("[DEBUG] Total mappings: %d, RWX: %d\n", total, rwx_count);
+    printf("[8/9] Test completed\n");
 }
 
 int main(int argc, char **argv) {

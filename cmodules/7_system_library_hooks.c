@@ -88,27 +88,9 @@ void check_mem_protection(void *addr, const char *funcname) {
     fclose(maps);
 }
 
-void check_shadow_libraries() {
-    FILE *maps = fopen("/proc/self/maps", "r");
-    if (!maps) return;
-    char line[512];
-    int found = 0, suspicious_count = 0;
-    while (fgets(line, sizeof(line), maps)) {
-        if (strstr(line, "shadow") || strstr(line, "shadowlib") || strstr(line, "pin") || strstr(line, "jit")) {
-            suspicious_count++;
-            if (verbose) printf("[DBI Detected: Suspicious mapping: %s", line);
-            found = 1;
-        }
-    }
-    if (!found && verbose) VPRINT("[DEBUG] No suspicious shadow libraries found in /proc/self/maps\n");
-    if (!verbose && suspicious_count > 0) {
-        printf("[DBI Detected: %d suspicious mappings found in /proc/self/maps]\n", suspicious_count);
-    }
-    fclose(maps);
-}
-
 void detect_system_hooks() {
     printf("[7/9] System Library Hooks ... \n");
+    int any_detected = 0;
     const char *funcs[] = {"mmap", "mprotect", "__libc_start_main", "dlopen", NULL};
     for (int i = 0; funcs[i]; ++i) {
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
@@ -122,14 +104,56 @@ void detect_system_hooks() {
         int disk_ok = read_libc_symbol_bytes(funcs[i], disk_bytes, SCAN_BYTE_COUNT);
         if (disk_ok == 0) print_bytes(disk_bytes, SCAN_BYTE_COUNT, "on-disk");
         if (disk_ok == 0 && memcmp(mem_bytes, disk_bytes, SCAN_BYTE_COUNT) != 0) {
-            printf("[DBI Detected: %s in-memory differs from on-disk]\n", funcs[i]);
+            printf("[7/9] [DBI Detected: %s in-memory differs from on-disk]\n", funcs[i]);
+            any_detected = 1;
         } else if (disk_ok == 0) {
-            if (verbose) printf("[%s OK]\n", funcs[i]);
-            else printf("[%s OK]\n", funcs[i]);
+            if (verbose) printf("[7/9] [%s OK]\n", funcs[i]);
         }
-        check_mem_protection(addr, funcs[i]);
+        // Check memory protection
+        FILE *maps = fopen("/proc/self/maps", "r");
+        if (maps) {
+            char line[512];
+            uintptr_t ip = (uintptr_t)addr;
+            while (fgets(line, sizeof(line), maps)) {
+                uintptr_t start, end;
+                char perms[5];
+                if (sscanf(line, "%lx-%lx %4s", &start, &end, perms) == 3) {
+                    if (ip >= start && ip < end) {
+                        if (verbose) VPRINT("[DEBUG] %s memory region: %lx-%lx perms=%s\n", funcs[i], start, end, perms);
+                        if (strstr(perms, "w")) {
+                            printf("[7/9] [DBI Detected: %s code region is writable]\n", funcs[i]);
+                            any_detected = 1;
+                        }
+                        break;
+                    }
+                }
+            }
+            fclose(maps);
+        }
     }
-    check_shadow_libraries();
+    // Shadow libraries
+    FILE *maps = fopen("/proc/self/maps", "r");
+    int found = 0, suspicious_count = 0;
+    if (maps) {
+        char line[512];
+        while (fgets(line, sizeof(line), maps)) {
+            if (strstr(line, "shadow") || strstr(line, "shadowlib") || strstr(line, "pin") || strstr(line, "jit")) {
+                suspicious_count++;
+                if (verbose) printf("[7/9] [DBI Detected: Suspicious mapping: %s", line);
+                found = 1;
+            }
+        }
+        fclose(maps);
+    }
+    if (suspicious_count > 0) {
+        if (!verbose) printf("[7/9] [DBI Detected: %d suspicious mappings found in /proc/self/maps]\n", suspicious_count);
+        any_detected = 1;
+    }
+    // Always print [7/9] [OK] if nothing detected
+    if (!any_detected) {
+        printf("[7/9] [OK]\n");
+    }
+    printf("[7/9] Test completed\n");
 }
 
 int main(int argc, char **argv) {

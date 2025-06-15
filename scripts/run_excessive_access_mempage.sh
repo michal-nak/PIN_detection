@@ -2,16 +2,14 @@
 
 PIN=~/forensics/pin-external-3.31-98869-gfa6f126a8-gcc-linux/pin
 TOOL=$PIN/../source/tools/SimpleExamples/obj-intel64/opcodemix.so
-BIN=./cmodules/bin/5_process_hierarchy
-SRC=./cmodules/5_process_hierarchy.c
+BIN=./cmodules/bin/8_excessive_access_mempage
+SRC=./cmodules/8_excessive_access_mempage.c
 
 set -e
 
 VERBOSE=""
 if [[ "$1" == "-v" ]]; then
     VERBOSE="-v"
-elif [[ "$1" == "-vv" ]]; then
-    VERBOSE="-vv"
 fi
 
 echo "Compiling..."

@@ -23,7 +23,7 @@ int read_mem_region(int mem_fd, unsigned long start, unsigned long end, unsigned
 }
 
 void detect_code_cache_fingerprint() {
-    printf("[1/9] Code Cache Fingerprint Detection]\n");
+    printf("[1/9] Code Cache Fingerprint Detection ... \n");
 
     FILE *maps = fopen("/proc/self/maps", "r");
     if (!maps) {
@@ -80,7 +80,7 @@ void detect_code_cache_fingerprint() {
 
         unsigned char *buffer = malloc(size);
         if (!buffer) {
-            printf("Memory allocation failed\n");
+            printf("[1/9] Memory allocation failed\n");
             continue;
         }
 
@@ -89,14 +89,14 @@ void detect_code_cache_fingerprint() {
             int found_marker = 0;
             for (size_t j = 0; j < size - 4; j++) {
                 uint32_t val = *(uint32_t *)(buffer + j);
-                if (val == 0xfeedbeaf) {  // 
+                if (val == 0xfeedbeaf) {
                     found_marker = 1;
                     if (strstr(region_lines[i], "[vdso]")) {
                         detected_vdso = 1;
                         VPRINT("[VERBOSE]   Marker found in VDSO at 0x%lx\n", start + j);
                         continue;
                     }
-                    printf("Found at 0x%lx in region %s\n", (start + j), region_lines[i]);
+                    printf("[1/9] [DBI Detected] Code cache marker found at 0x%lx in region %s\n", (start + j), region_lines[i]);
                     detected = 1;
                     break;
                 }
@@ -115,10 +115,10 @@ void detect_code_cache_fingerprint() {
 
     if (!detected) {
         if (detected_vdso) {
-            printf("[OK] No DBI code cache marker detected, but was found in VDSO region\n");
+            printf("[1/9] [OK] No DBI code cache marker detected, but was found in VDSO region\n");
         }
         else {
-            printf("[OK] No DBI code cache marker detected\n");
+            printf("[1/9] [OK] No DBI code cache marker detected\n");
         }
     }
 
@@ -129,5 +129,6 @@ void detect_code_cache_fingerprint() {
 int main(int argc, char **argv) {
     if (argc > 1 && strcmp(argv[1], "-v") == 0) verbose = 1;
     detect_code_cache_fingerprint();
+    printf("[1/9] Test completed\n");
     return 0;
 }

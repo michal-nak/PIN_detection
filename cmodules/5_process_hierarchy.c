@@ -113,7 +113,7 @@ void detect_process_hierarchy() {
                 fputc('\n', stderr);
             }
         }
-        printf("[DBI Detected: PIN found in process hierarchy or environment]\n");
+        printf("[5/9] [DBI Detected: PIN found in process hierarchy or environment]\n");
     } else {
         if (very_verbose || verbose) {
             // Show concise ancestry if nothing detected
@@ -144,7 +144,7 @@ void detect_process_hierarchy() {
                 show_pid = next_ppid;
             }
         }
-        printf("[OK]\n");
+        printf("[5/9] [OK]\n");
     }
 }
 
@@ -152,5 +152,6 @@ int main(int argc, char **argv) {
     if (argc > 1 && strcmp(argv[1], "-v") == 0) verbose = 1;
     if (argc > 1 && strcmp(argv[1], "-vv") == 0) { verbose = 1; very_verbose = 1; }
     detect_process_hierarchy();
+    printf("[5/9] Test completed\n");
     return 0;
 }

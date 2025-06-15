@@ -17,17 +17,18 @@ int is_running_under_pin() {
 }
 
 void print_code_bytes(const unsigned char *code, size_t len, const char *label) {
-    printf("[DEBUG] %s: ", label);
+    printf("[3/9] [DEBUG] %s: ", label);
     for (size_t i = 0; i < len; ++i) printf("%02x ", code[i]);
     printf("\n");
 }
 
 int main() {
+    printf("[3/9] Self-Modifying Code Incorrect Handling ... \n");
     unsigned char *code = mmap(NULL, 4096,
                                PROT_READ | PROT_WRITE | PROT_EXEC,
                                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (code == MAP_FAILED) {
-        perror("mmap");
+        perror("[3/9] mmap");
         exit(1);
     }
 
@@ -39,9 +40,9 @@ int main() {
     print_code_bytes(code, 8, "Initial code bytes");
 
     int (*func)() = (int (*)())code;
-    printf("[DEBUG] Calling original code...\n");
+    printf("[3/9] Calling original code...\n");
     int val1 = func();
-    printf("[DEBUG] val1 = %d\n", val1);
+    printf("[3/9] val1 = %d\n", val1);
 
     // modify: mov $5, %eax; nop; ret
     code[0] = 0xB8; // mov imm32, %eax
@@ -52,20 +53,21 @@ int main() {
 
     print_code_bytes(code, 8, "Modified code bytes");
 
-    printf("[DEBUG] Calling modified code...\n");
+    printf("[3/9] Calling modified code...\n");
     int val2 = func();
-    printf("[DEBUG] val2 = %d\n", val2);
+    printf("[3/9] val2 = %d\n", val2);
 
     int under_pin = is_running_under_pin();
     if (val1 == 2 && val2 == 5) {
-        printf("[OK] SMC handled correctly\n");
+        printf("[3/9] [OK] SMC handled correctly\n");
         if (under_pin) {
-            printf("[WARNING] SMC handled correctly under PIN (unexpected, check if SMC support is enabled)\n");
+            printf("[3/9] [WARNING] SMC handled correctly under PIN (unexpected, check if SMC support is enabled)\n");
         }
     } else {
-        printf("[DBI DETECTED] SMC not handled properly (got %d, %d)\n", val1, val2);
+        printf("[3/9] [DBI DETECTED] SMC not handled properly (got %d, %d)\n", val1, val2);
     }
 
     munmap(code, 4096);
+    printf("[3/9] Test completed\n");
     return 0;
 }

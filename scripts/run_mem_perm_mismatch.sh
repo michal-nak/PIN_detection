@@ -2,7 +2,8 @@
 
 PIN=~/forensics/pin-external-3.31-98869-gfa6f126a8-gcc-linux/pin
 TOOL=$PIN/../source/tools/SimpleExamples/obj-intel64/opcodemix.so
-BIN=./4_memory_permission_mismatch
+BIN=./cmodules/bin/4_memory_permission_mismatch
+SRC=./cmodules/4_memory_permission_mismatch.c
 
 set -e
 
@@ -12,7 +13,7 @@ if [[ "$1" == "-v" ]]; then
 fi
 
 echo "Compiling..."
-gcc -o $BIN ./4_memory_permission_mismatch.c -O0
+gcc -o $BIN $SRC -O0
 
 echo "[TEST 1] Running natively..."
 $BIN $VERBOSE

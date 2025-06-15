@@ -7,7 +7,7 @@ The recent paper "Evasion and Countermeasures Techniques to Detect Dynamic Binar
 
 The diffent techniques are as follows:
 
-1. Detect_code_cache_fingerprint
+1. Detect_code_cache_fingerprint: 
 2. detect_ip_unexpected_region : It looks like modern PIN does try to mitigate chercking directly the pointer and calling it simply will not yield results. However, detecting an anonymous executable function might work.
 3. detect_smc();
 4. detect_mem_perm_mismatch();

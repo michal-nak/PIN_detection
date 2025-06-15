@@ -2,7 +2,8 @@
 
 PIN=~/forensics/pin-external-3.31-98869-gfa6f126a8-gcc-linux/pin
 TOOL=$PIN/../source/tools/SimpleExamples/obj-intel64/opcodemix.so
-BIN=./7_system_library_hooks
+BIN=./cmodules/bin/7_system_library_hooks
+SRC=./cmodules/7_system_library_hooks.c
 
 set -e
 
@@ -12,7 +13,7 @@ if [[ "$1" == "-v" ]]; then
 fi
 
 echo "Compiling..."
-gcc -o $BIN ./7_system_library_hooks.c -ldl -O0
+gcc -o $BIN $SRC -ldl -O0
 
 echo "[TEST 1] Running natively..."
 $BIN $VERBOSE

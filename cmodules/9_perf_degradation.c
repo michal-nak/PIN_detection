@@ -5,7 +5,7 @@
 #include <time.h>
 
 int verbose = 0;
-#define VPRINT(fmt, ...) do { if (verbose) fprintf(stderr, "[perf_degradation][DEBUG] " fmt, ##__VA_ARGS__); } while (0)
+#define VPRINT(fmt, ...) do { if (verbose) fprintf(stderr, "[9/9] [DEBUG] " fmt, ##__VA_ARGS__); } while (0)
 
 // Estimate baseline time for the loop based on CPU MHz
 // Returns seconds, or -1 on failure
@@ -38,8 +38,6 @@ double run_timing_loop() {
 }
 
 void detect_perf_degradation() {
-    printf("[9/9] Performance Degradation ... \n");
-
     // 1. Check for PERF_BASELINE env var
     double baseline = -1.0;
     char *env = getenv("PERF_BASELINE");
@@ -73,13 +71,15 @@ void detect_perf_degradation() {
     if (verbose) VPRINT("Test run elapsed time: %.6f seconds\n", elapsed);
 
     if (elapsed > threshold)
-        printf("[DBI Detected: Slow execution]\n");
+        printf("[9/9] [DBI Detected: Slow execution]\n");
     else
-        printf("[OK]\n");
+        printf("[9/9] [OK]\n");
+    printf("[9/9] Test completed\n");
 }
 
 int main(int argc, char **argv) {
     if (argc > 1 && strcmp(argv[1], "-v") == 0) verbose = 1;
+    printf("[9/9] Performance Degradation ... \n");
     detect_perf_degradation();
     return 0;
 }

@@ -6,7 +6,7 @@ int verbose = 0;
 #define VPRINT(fmt, ...) do { if (verbose) fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
 
 void detect_mem_perm_mismatch() {
-    printf("[4/9] Memory Region Permission Mismatches ... ");
+    printf("[4/9] Memory Region Permission Mismatches ... \n");
 
     FILE *maps = fopen("/proc/self/maps", "r");
     if (!maps) {
@@ -29,13 +29,14 @@ void detect_mem_perm_mismatch() {
     fclose(maps);
 
     if (suspicious)
-        printf("[DBI Detected: RWX page found]\n");
+        printf("[4/9] [DBI Detected: RWX page found]\n");
     else
-        printf("[OK]\n");
+        printf("[4/9] [OK]\n");
 }
 
 int main(int argc, char **argv) {
     if (argc > 1 && strcmp(argv[1], "-v") == 0) verbose = 1;
     detect_mem_perm_mismatch();
+    printf("[4/9] Test completed\n");
     return 0;
 }
