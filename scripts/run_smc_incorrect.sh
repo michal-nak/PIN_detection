@@ -10,5 +10,5 @@ $BIN
 
 echo "------------------------------------------"
 
-echo "[TEST 2] Running under Valgrind..."
-valgrind --tool=memcheck $BIN
+echo "[TEST 2] Running under PIN (SMC support disabled)..."
+$PIN -smc_strict 0 -t $TOOL -- $BIN

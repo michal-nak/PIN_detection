@@ -6,13 +6,18 @@ BIN=./4_memory_permission_mismatch
 
 set -e
 
+VERBOSE=""
+if [[ "$1" == "-v" ]]; then
+    VERBOSE="-v"
+fi
+
 echo "Compiling..."
 gcc -o $BIN ./4_memory_permission_mismatch.c -O0
 
 echo "[TEST 1] Running natively..."
-$BIN
+$BIN $VERBOSE
 
 echo "------------------------------------------"
 
 echo "[TEST 2] Running under PIN..."
-$PIN -t $TOOL -- $BIN
+$PIN -t $TOOL -- $BIN $VERBOSE

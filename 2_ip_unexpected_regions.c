@@ -6,9 +6,14 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+int verbose = 0;
+#define VPRINT(fmt, ...) do { if (verbose) fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
+
 // Get current IP using reliable method
 uintptr_t get_ip() {
-    return (uintptr_t)__builtin_return_address(0);
+    uintptr_t ip = (uintptr_t)__builtin_return_address(0);
+    VPRINT("[DEBUG] get_ip: return address = 0x%lx\n", ip);
+    return ip;
 }
 
 // Check if address is in original executable text section
@@ -27,15 +32,20 @@ bool is_in_original_text(uintptr_t ip) {
                 while (fgets(line, sizeof(line), maps)) {
                     if (strstr(line, exe_path) && strstr(line, "r-xp")) {
                         sscanf(line, "%lx-%lx", &text_start, &text_end);
+                        VPRINT("[DEBUG] Found text section: %lx-%lx for %s\n", text_start, text_end, exe_path);
                         break;
                     }
                 }
+            } else {
+                VPRINT("[DEBUG] Could not resolve /proc/self/exe\n");
             }
             fclose(maps);
+        } else {
+            VPRINT("[DEBUG] Could not open /proc/self/maps\n");
         }
         initialized = true;
     }
-    
+    VPRINT("[DEBUG] is_in_original_text: ip=0x%lx, text_start=0x%lx, text_end=0x%lx\n", ip, text_start, text_end);
     return (ip >= text_start && ip < text_end);
 }
 
@@ -47,43 +57,44 @@ bool is_in_pin_cache(uintptr_t ip) {
     char line[256];
     bool has_large_anon_exec = false;
     bool ip_in_anon_exec = false;
+    int region_idx = 0;
     
     while (fgets(line, sizeof(line), maps)) {
         uintptr_t start, end;
         char perms[5];
         char path[256] = "";
-        
-        if (sscanf(line, "%lx-%lx %4s %*s %*s %*s %255s", &start, &end, perms, path) < 3)
-            continue;
-            
+        int n = sscanf(line, "%lx-%lx %4s %*s %*s %*s %255s", &start, &end, perms, path);
+        if (n < 3) continue;
+        VPRINT("[DEBUG] Region %d: %lx-%lx perms=%s path=%s\n", region_idx, start, end, perms, path);
+        region_idx++;
         // Check for large anonymous executable regions (PIN characteristic)
         if (strchr(perms, 'x') && path[0] == '\0') {
             if ((end - start) > 0x10000) {
                 has_large_anon_exec = true;
-                printf("[DEBUG] Found large anonymous executable region: %lx-%lx\n", start, end);
+                VPRINT("[DEBUG] Found large anonymous executable region: %lx-%lx\n", start, end);
             }
-            // if (ip >= start && ip < end) {
-            //     printf("[DEBUG] IP 0x%lx in anonymous executable region: %lx-%lx\n", ip, start, end);
-            //     ip_in_anon_exec = true;
-            // }
+            if (ip >= start && ip < end) {
+                VPRINT("[DEBUG] IP 0x%lx in anonymous executable region: %lx-%lx\n", ip, start, end);
+                ip_in_anon_exec = true;
+            }
         }
     }
-    
     fclose(maps);
-    
-    // PIN detection requires both conditions
+    VPRINT("[DEBUG] is_in_pin_cache: has_large_anon_exec=%d, ip_in_anon_exec=%d\n", has_large_anon_exec, ip_in_anon_exec);
     return has_large_anon_exec; //&& ip_in_anon_exec
 }
 
 void detect_pin() {
     uintptr_t ip = get_ip();
     printf("Current IP: 0x%lx\n", ip);
-
-    if (!is_in_original_text(ip) || is_in_pin_cache(ip)) {
+    VPRINT("[DEBUG] Running detect_pin: IP=0x%lx\n", ip);
+    bool in_text = is_in_original_text(ip);
+    bool in_pin = is_in_pin_cache(ip);
+    VPRINT("[DEBUG] detect_pin: in_text=%d, in_pin=%d\n", in_text, in_pin);
+    if (!in_text || in_pin) {
         printf("[PIN DETECTED] Execution outside original text (IP: 0x%lx)\n", ip);
         exit(1);
     }
-    
     printf("[OK] Execution in original text section\n");
 }
 
@@ -93,15 +104,11 @@ void instrumented_function() {
     detect_pin();
 }
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc > 1 && strcmp(argv[1], "-v") == 0) verbose = 1;
     printf("Starting direct PIN detection test...\n");
-    
-    // Initial check
     detect_pin();
-    
-    // Function that might be instrumented
     instrumented_function();
-    
     printf("Test completed\n");
     return 0;
 }
