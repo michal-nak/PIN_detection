@@ -154,3 +154,20 @@ Where `$PIN` and `$TOOL` are set as in the scripts.
 
 - Update the `PIN` and `TOOL` variables in scripts if your PIN installation is in a different location.
 - All scripts and code are modular and robust for easy extension.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Disclaimer
+
+This repository is for educational and research purposes only. The code and techniques provided are intended to help understand and analyze dynamic binary instrumentation (DBI) detection and evasion. Use of this code for malicious purposes is strictly prohibited.
+
+By using this repository, you agree to:
+- Use the code responsibly and ethically.
+- Comply with all applicable laws and regulations in your jurisdiction.
+- Not use the code to harm, disrupt, or gain unauthorized access to any system or data.
+
+The authors and contributors are not responsible for any misuse of this code or for any damages or legal consequences that may arise from its use.
