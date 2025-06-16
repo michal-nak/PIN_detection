@@ -38,7 +38,7 @@ void detect_process_hierarchy() {
 
     for (char **env = environ; *env; ++env) {
         if (strncmp(*env, "PIN_", 4) == 0) {
-            if (verbose || very_verbose) fprintf(stderr, "[RELEVANT] Detected PIN_ env: %s\n", *env);
+            if (verbose || very_verbose) fprintf(stderr, "[5/9] [RELEVANT] Detected PIN_ env: %s\n", *env);
             reason = "PIN_ environment variable detected";
             found_pin_env = 1;
             break;
@@ -51,7 +51,7 @@ void detect_process_hierarchy() {
         nself = fread(selfcmdline, 1, sizeof(selfcmdline) - 1, selfcmd);
         fclose(selfcmd);
         if (cmdline_has_pin(selfcmdline, nself)) {
-            if (very_verbose) fprintf(stderr, "[RELEVANT] Detected '/pin' in /proc/self/cmdline: ");
+            if (very_verbose) fprintf(stderr, "[5/9] [RELEVANT] Detected '/pin' in /proc/self/cmdline: ");
             if (very_verbose) {
                 for (size_t i = 0; i < nself; ++i) fputc(selfcmdline[i] ? selfcmdline[i] : ' ', stderr);
                 fputc('\n', stderr);
@@ -101,14 +101,14 @@ void detect_process_hierarchy() {
     }
 
     if (found_pin || found_pin_env) {
-        REASON_PRINT("[REASON] %s\n", reason ? reason : "PIN detected");
+        REASON_PRINT("[5/9] [REASON] %s\n", reason ? reason : "PIN detected");
         if (very_verbose || verbose) {
             if (found_pin && detected_pid) {
-                fprintf(stderr, "[RELEVANT] Detected in process PID %d: ", detected_pid);
+                fprintf(stderr, "[5/9] [RELEVANT] Detected in process PID %d: ", detected_pid);
                 for (size_t i = 0; i < detected_cmdline_len; ++i) fputc(detected_cmdline[i] ? detected_cmdline[i] : ' ', stderr);
                 fputc('\n', stderr);
             } else if (found_pin_env && relevant_pid) {
-                fprintf(stderr, "[RELEVANT] Detected in process PID %d: ", relevant_pid);
+                fprintf(stderr, "[5/9] [RELEVANT] Detected in process PID %d: ", relevant_pid);
                 for (size_t i = 0; i < relevant_cmdline_len; ++i) fputc(relevant_cmdline[i] ? relevant_cmdline[i] : ' ', stderr);
                 fputc('\n', stderr);
             }
@@ -127,7 +127,7 @@ void detect_process_hierarchy() {
                 char cmdline[256] = {0};
                 size_t n = fread(cmdline, 1, sizeof(cmdline) - 1, f);
                 fclose(f);
-                fprintf(stderr, "[ANCESTRY] PID %d: ", show_pid);
+                fprintf(stderr, "[5/9] [ANCESTRY] PID %d: ", show_pid);
                 for (size_t i = 0; i < n; ++i) fputc(cmdline[i] ? cmdline[i] : ' ', stderr);
                 fputc('\n', stderr);
                 char statpath[256];

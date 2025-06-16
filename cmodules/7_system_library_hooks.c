@@ -14,7 +14,7 @@ int verbose = 0;
 
 void print_bytes(const unsigned char *ptr, size_t n, const char *label) {
     if (!verbose) return;
-    VPRINT("[DEBUG] %s: ", label);
+    VPRINT("[7/9] [DEBUG] %s: ", label);
     for (size_t i = 0; i < n; ++i) VPRINT("%02x ", ptr[i]);
     VPRINT("\n");
 }
@@ -31,7 +31,7 @@ int read_libc_symbol_bytes(const char *symbol, unsigned char *out, size_t n) {
     } else {
         libc_path[len] = '\0';
     }
-    VPRINT("[DEBUG] Using libc path: %s\n", libc_path);
+    VPRINT("[7/9] [DEBUG] Using libc path: %s\n", libc_path);
     FILE *f = fopen(libc_path, "rb");
     if (!f) return -1;
     Elf64_Ehdr eh;
@@ -77,9 +77,9 @@ void check_mem_protection(void *addr, const char *funcname) {
         char perms[5];
         if (sscanf(line, "%lx-%lx %4s", &start, &end, perms) == 3) {
             if (ip >= start && ip < end) {
-                if (verbose) VPRINT("[DEBUG] %s memory region: %lx-%lx perms=%s\n", funcname, start, end, perms);
+                if (verbose) VPRINT("[7/9] [DEBUG] %s memory region: %lx-%lx perms=%s\n", funcname, start, end, perms);
                 if (strstr(perms, "w")) {
-                    printf("[DBI Detected: %s code region is writable]\n", funcname);
+                    printf("[7/9] [DBI Detected: %s code region is writable]\n", funcname);
                 }
                 break;
             }
@@ -94,10 +94,10 @@ void detect_system_hooks() {
     const char *funcs[] = {"mmap", "mprotect", "__libc_start_main", "dlopen", NULL};
     for (int i = 0; funcs[i]; ++i) {
         void *handle = dlopen("libc.so.6", RTLD_LAZY);
-        if (!handle) { printf("[ERROR] Could not open libc.so.6\n"); continue; }
+        if (!handle) { printf("[7/9] [ERROR] Could not open libc.so.6\n"); continue; }
         void *addr = dlsym(handle, funcs[i]);
         dlclose(handle);
-        if (!addr) { printf("[ERROR] Could not resolve %s\n", funcs[i]); continue; }
+        if (!addr) { printf("[7/9] [ERROR] Could not resolve %s\n", funcs[i]); continue; }
         unsigned char *mem_bytes = (unsigned char *)addr;
         print_bytes(mem_bytes, SCAN_BYTE_COUNT, funcs[i]);
         unsigned char disk_bytes[SCAN_BYTE_COUNT];
@@ -119,7 +119,7 @@ void detect_system_hooks() {
                 char perms[5];
                 if (sscanf(line, "%lx-%lx %4s", &start, &end, perms) == 3) {
                     if (ip >= start && ip < end) {
-                        if (verbose) VPRINT("[DEBUG] %s memory region: %lx-%lx perms=%s\n", funcs[i], start, end, perms);
+                        if (verbose) VPRINT("[7/9] [DEBUG] %s memory region: %lx-%lx perms=%s\n", funcs[i], start, end, perms);
                         if (strstr(perms, "w")) {
                             printf("[7/9] [DBI Detected: %s code region is writable]\n", funcs[i]);
                             any_detected = 1;

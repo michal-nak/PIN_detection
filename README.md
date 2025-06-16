@@ -1,5 +1,29 @@
 # PIN_detection
 
+## Subject
+
+*P11. PIN Detection. (several groups, 1-3 students each).*
+
+The recent paper "Evasion and Countermeasures Techniques to Detect Dynamic Binary Instrumentation Frameworks" discusses 26 classes of evasion techniques to detect the presence of a dynamic instrumentation framework. Sadly, the authors also notice that PoC are only available for nine of them. The goal of this project is to make a Linux binary suite that tests sequentially different techniques to detect the presence of Intel PIN. Start by aggregating the nine existing PoC and then try to implement some of the other techniques described in the paper.
+
+The different techniques are as follows:
+
+1. Code Cache Fingerprints
+2. IP in Unexpected Memory Regions
+3. Incorrect Handling of Self-Modifying Code (SMC)
+4. Memory Region Permission Mismatches
+5. Process Hierarchy
+6. Incorrect Emulation of Supported Assembly Instructions
+7. System Library Hooks
+8. Excessive Number of Full Access Memory Pages
+9. Performance Degradation
+
+This project was very enjoyable however, more time would have been welcome as in the current state, 6/9 evasion techniques work. 2 `IP in Unexpected Memory Regions` has trouble detecting when it is not in the expected cache. 3 `Incorrect Handling of Self-Modifying Code (SMC)` I'm not entirely sure how the self-modfying code is supposed to be altered incorrectly (I spent by far the most time on this, downgrading PIN, looking into valgrind, downgrading valgrind and its dependencies and even starting writing my own basic DBI to understand better where it might come from). Finally, I could never get close to  making 6 `Incorrect Emulation of Supported Assembly Instructions` work as I wasn't sure what kind of instrcutions could be ran on a modern computer but not in PIN, especially considering my CPU is an Intel one.
+Overall, a pretty fun experience, especially with the malware engineer mindeset (what code can I write to infect as many machines as possible?) and will definitely try to work on this more once the exam session is done.
+Because of the strict deadline, AI has been used way too much for my comfort but it will get soon fixed.
+
+---
+
 ## Quickstart
 
 1. **Configure Intel PIN path:**
@@ -41,29 +65,6 @@ All main scripts support `-h` or `--help` for usage instructions:
 
 ---
 
-## Subject
-
-*P11. PIN Detection. (several groups, 1-3 students each).*
-
-The recent paper "Evasion and Countermeasures Techniques to Detect Dynamic Binary Instrumentation Frameworks" discusses 26 classes of evasion techniques to detect the presence of a dynamic instrumentation framework. Sadly, the authors also notice that PoC are only available for nine of them. The goal of this project is to make a Linux binary suite that tests sequentially different techniques to detect the presence of Intel PIN. Start by aggregating the nine existing PoC and then try to implement some of the other techniques described in the paper.
-
-The different techniques are as follows:
-
-1. Code Cache Fingerprints
-2. IP in Unexpected Memory Regions
-3. Incorrect Handling of Self-Modifying Code (SMC)
-4. Memory Region Permission Mismatches
-5. Process Hierarchy
-6. Incorrect Emulation of Supported Assembly Instructions
-7. System Library Hooks
-8. Excessive Number of Full Access Memory Pages
-9. Performance Degradation
-
-This project was very enjoyable however, more time would have been welcome as in the current state, 6/9 evasion techniques work. 2 `IP in Unexpected Memory Regions` has trouble detecting when it is not in the expected cache. 3 `Incorrect Handling of Self-Modifying Code (SMC)` I'm not entirely sure how the self-modfying code is supposed to be altered incorrectly (I spent by far the most time on this, downgrading PIN, looking into valgrind, downgrading valgrind and its dependencies and even starting writing my own basic DBI to understand better where it might come from). Finally, I could never get close to  making 6 `Incorrect Emulation of Supported Assembly Instructions` work as I wasn't sure what kind of instrcutions could be ran on a modern computer but not in PIN, especially considering my CPU is an Intel one.
-Overall, a pretty fun experience, especially with the malware engineer mindeset (what code can I write to infect as many machines as possible?) and will definitely try to work on this more once the exam session is done.
-
----
-
 ## Project Structure
 
 - `cmodules/`         - All C source files for evasion techniques
@@ -80,7 +81,7 @@ Overall, a pretty fun experience, especially with the malware engineer mindeset 
 
 - Linux (x86_64)
 - GCC (for compiling C code)
-- Intel PIN (download and extract, update the `PIN` variable in scripts if needed)
+- Intel PIN ([Download here](https://www.intel.com/content/www/us/en/developer/tools/pin/download.html); download and extract, update the `PIN` variable in scripts if needed)
 
 ### 1. Compile All Techniques
 
@@ -120,16 +121,22 @@ This script assumes all binaries are already compiled.
 
 ### 4. Run Individual Techniques
 
-To run a single technique (e.g., technique 3) natively:
+For running a an individual technique, I recommend running one of the provided scripts located at `scripts` as they run the native version, followed by the PIN version. This illustrates some techniques better than others, mainly technique $9$ `Performance Degradation` in the time difference.
 
 ```bash
-./cmodules/bin/3_smc_incorrect_handling -v
+.scripts/run_perf_degradation -v
+```
+
+To run a single technique (e.g., technique 1) natively:
+
+```bash
+./cmodules/bin/1_code_cache_fingerprint -v
 ```
 
 To run under PIN:
 
 ```bash
-$PIN -t $TOOL -- ./cmodules/bin/3_smc_incorrect_handling -v
+$PIN -t $TOOL -- ./cmodules/bin/1_code_cache_fingerprint -v
 ```
 
 Where `$PIN` and `$TOOL` are set as in the scripts.

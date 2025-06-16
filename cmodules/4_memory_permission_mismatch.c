@@ -18,10 +18,10 @@ void detect_mem_perm_mismatch() {
     int region_count = 0;
 
     while (fgets(line, sizeof(line), maps)) {
-        VPRINT("[VERBOSE] Region %d: %s", region_count, line);
+        VPRINT("[4/9] [VERBOSE] Region %d: %s", region_count, line);
         region_count++;
         if (strstr(line, "rwxp")) {
-            VPRINT("[VERBOSE] Suspicious RWX region found: %s", line);
+            VPRINT("[4/9] [VERBOSE] Suspicious RWX region found: %s", line);
             suspicious = 1;
             break;
         }

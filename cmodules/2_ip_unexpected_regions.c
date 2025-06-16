@@ -17,7 +17,7 @@ int verbose = 0;
 // Get current IP using reliable method
 uintptr_t get_ip() {
     uintptr_t ip = (uintptr_t)__builtin_return_address(0);
-    VPRINT("[DEBUG] get_ip: return address = 0x%lx\n", ip);
+    VPRINT("[2/9] [DEBUG] get_ip: return address = 0x%lx\n", ip);
     return ip;
 }
 
@@ -37,20 +37,20 @@ bool is_in_original_text(uintptr_t ip) {
                 while (fgets(line, sizeof(line), maps)) {
                     if (strstr(line, exe_path) && strstr(line, "r-xp")) {
                         sscanf(line, "%lx-%lx", &text_start, &text_end);
-                        VPRINT("[DEBUG] Found text section: %lx-%lx for %s\n", text_start, text_end, exe_path);
+                        VPRINT("[2/9] [DEBUG] Found text section: %lx-%lx for %s\n", text_start, text_end, exe_path);
                         break;
                     }
                 }
             } else {
-                VPRINT("[DEBUG] Could not resolve /proc/self/exe\n");
+                VPRINT("[2/9] [DEBUG] Could not resolve /proc/self/exe\n");
             }
             fclose(maps);
         } else {
-            VPRINT("[DEBUG] Could not open /proc/self/maps\n");
+            VPRINT("[2/9] [DEBUG] Could not open /proc/self/maps\n");
         }
         initialized = true;
     }
-    VPRINT("[DEBUG] is_in_original_text: ip=0x%lx, text_start=0x%lx, text_end=0x%lx\n", ip, text_start, text_end);
+    VPRINT("[2/9] [DEBUG] is_in_original_text: ip=0x%lx, text_start=0x%lx, text_end=0x%lx\n", ip, text_start, text_end);
     return (ip >= text_start && ip < text_end);
 }
 
@@ -70,22 +70,22 @@ bool is_in_pin_cache(uintptr_t ip) {
         char path[256] = "";
         int n = sscanf(line, "%lx-%lx %4s %*s %*s %*s %255s", &start, &end, perms, path);
         if (n < 3) continue;
-        VPRINT("[DEBUG] Region %d: %lx-%lx perms=%s path=%s\n", region_idx, start, end, perms, path);
+        VPRINT("[2/9] [DEBUG] Region %d: %lx-%lx perms=%s path=%s\n", region_idx, start, end, perms, path);
         region_idx++;
         // Check for large anonymous executable regions (PIN characteristic)
         if (strchr(perms, 'x') && path[0] == '\0') {
             if ((end - start) > 0x10000) {
                 has_large_anon_exec = true;
-                VPRINT("[DEBUG] Found large anonymous executable region: %lx-%lx\n", start, end);
+                VPRINT("[2/9] [DEBUG] Found large anonymous executable region: %lx-%lx\n", start, end);
             }
             if (ip >= start && ip < end) {
-                VPRINT("[DEBUG] IP 0x%lx in anonymous executable region: %lx-%lx\n", ip, start, end);
+                VPRINT("[2/9] [DEBUG] IP 0x%lx in anonymous executable region: %lx-%lx\n", ip, start, end);
                 ip_in_anon_exec = true;
             }
         }
     }
     fclose(maps);
-    VPRINT("[DEBUG] is_in_pin_cache: has_large_anon_exec=%d, ip_in_anon_exec=%d\n", has_large_anon_exec, ip_in_anon_exec);
+    VPRINT("[2/9] [DEBUG] is_in_pin_cache: has_large_anon_exec=%d, ip_in_anon_exec=%d\n", has_large_anon_exec, ip_in_anon_exec);
     return has_large_anon_exec && ip_in_anon_exec;
 }
 
@@ -93,10 +93,10 @@ bool is_in_pin_cache(uintptr_t ip) {
 int detect_pin() {
     uintptr_t ip = get_ip();
     printf("[2/9] Instruction Pointer Unexpected Regions ... \n");
-    VPRINT("[DEBUG] Running detect_pin: IP=0x%lx\n", ip);
+    VPRINT("[2/9] [DEBUG] Running detect_pin: IP=0x%lx\n", ip);
     bool in_text = is_in_original_text(ip);
     bool in_pin = is_in_pin_cache(ip);
-    VPRINT("[DEBUG] detect_pin: in_text=%d, in_pin=%d\n", in_text, in_pin);
+    VPRINT("[2/9] [DEBUG] detect_pin: in_text=%d, in_pin=%d\n", in_text, in_pin);
     if (!in_text || in_pin) {
         printf("[2/9] [DBI Detected] Execution outside original text (IP: 0x%lx)\n", ip);
         return 1;

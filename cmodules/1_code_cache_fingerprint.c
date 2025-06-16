@@ -56,7 +56,7 @@ void detect_code_cache_fingerprint() {
             if (strchr(perms, 'x')) {
                 // Skip region if it matches our own binary
                 if (pathname && exe_len > 0 && strncmp(pathname, exe_path, strlen(exe_path)) == 0) {
-                    VPRINT("[VERBOSE] Skipping own binary region: %s", line);
+                    VPRINT("[1/9] [VERBOSE] Skipping own binary region: %s", line);
                     continue;
                 }
                 regions[region_count][0] = start;
@@ -75,8 +75,8 @@ void detect_code_cache_fingerprint() {
         unsigned long start = regions[i][0];
         unsigned long end = regions[i][1];
         size_t size = end - start;
-        VPRINT("[VERBOSE] Region %d: %s", i, region_lines[i]);
-        VPRINT("[VERBOSE]   Start: 0x%lx, End: 0x%lx, Size: %zu bytes\n", start, end, size);
+        VPRINT("[1/9] [VERBOSE] Region %d: %s", i, region_lines[i]);
+        VPRINT("[1/9] [VERBOSE]   Start: 0x%lx, End: 0x%lx, Size: %zu bytes\n", start, end, size);
 
         unsigned char *buffer = malloc(size);
         if (!buffer) {
@@ -85,7 +85,7 @@ void detect_code_cache_fingerprint() {
         }
 
         if (read_mem_region(mem_fd, start, end, buffer) == 0) {
-            VPRINT("[VERBOSE]   Searching for marker 0xfeedbeaf in region %d...\n", i);
+            VPRINT("[1/9] [VERBOSE]   Searching for marker 0xfeedbeaf in region %d...\n", i);
             int found_marker = 0;
             for (size_t j = 0; j < size - 4; j++) {
                 uint32_t val = *(uint32_t *)(buffer + j);
@@ -93,7 +93,7 @@ void detect_code_cache_fingerprint() {
                     found_marker = 1;
                     if (strstr(region_lines[i], "[vdso]")) {
                         detected_vdso = 1;
-                        VPRINT("[VERBOSE]   Marker found in VDSO at 0x%lx\n", start + j);
+                        VPRINT("[1/9] [VERBOSE]   Marker found in VDSO at 0x%lx\n", start + j);
                         continue;
                     }
                     printf("[1/9] [DBI Detected] Code cache marker found at 0x%lx in region %s\n", (start + j), region_lines[i]);
@@ -102,10 +102,10 @@ void detect_code_cache_fingerprint() {
                 }
             }
             if (!found_marker) {
-                VPRINT("[VERBOSE]   No marker found in region %d\n", i);
+                VPRINT("[1/9] [VERBOSE]   No marker found in region %d\n", i);
             }
         } else {
-            VPRINT("[VERBOSE]   Failed to read region %d\n", i);
+            VPRINT("[1/9] [VERBOSE]   Failed to read region %d\n", i);
         }
 
         free(buffer);

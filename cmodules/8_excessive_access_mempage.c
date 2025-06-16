@@ -10,7 +10,7 @@ void detect_excessive_full_access_pages() {
 
     FILE *maps = fopen("/proc/self/maps", "r");
     if (!maps) {
-        printf("[ERROR] Could not open /proc/self/maps\n");
+        printf("[8/9] [ERROR] Could not open /proc/self/maps\n");
         return;
     }
     char line[512];
@@ -20,7 +20,7 @@ void detect_excessive_full_access_pages() {
         total++;
         if (strstr(line, "rwxp")) {
             rwx_count++;
-            if (verbose) VPRINT("[DEBUG] RWX mapping: %s", line);
+            if (verbose) VPRINT("[8/9] [DEBUG] RWX mapping: %s", line);
         }
     }
     fclose(maps);
@@ -29,7 +29,7 @@ void detect_excessive_full_access_pages() {
         printf("[8/9] [DBI Detected: Excessive RWX pages: %d found]\n", rwx_count);
     else
         printf("[8/9] [OK]\n");
-    if (verbose) VPRINT("[DEBUG] Total mappings: %d, RWX: %d\n", total, rwx_count);
+    if (verbose) VPRINT("[8/9] [DEBUG] Total mappings: %d, RWX: %d\n", total, rwx_count);
     printf("[8/9] Test completed\n");
 }
 
