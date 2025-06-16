@@ -27,11 +27,17 @@ if [ -f ./pin.conf ]; then
     source ./pin.conf
 fi
 PIN=${PIN:-~/forensics/pin-external-3.31-98869-gfa6f126a8-gcc-linux/pin}
-TOOL=$PIN/../source/tools/SimpleExamples/obj-intel64/opcodemix.so
+TOOL=${TOOL:-$PIN/../source/tools/SimpleExamples/obj-intel64/opcodemix.so}
 
 if [[ ! -x "$PIN" ]]; then
     echo "[ERROR] Intel PIN not found or not executable at: $PIN"
     echo "Edit pin.conf or set the PIN environment variable. See README.md."
+    exit 1
+fi
+
+if [[ ! -f "$TOOL" ]]; then
+    echo "[run_all_evasions_from_build.sh][ERROR] PIN tool not found at: $TOOL"
+    echo "[run_all_evasions_from_build.sh] Please build the required PIN tool (e.g., opcodemix.so) or update the TOOL path in this script."
     exit 1
 fi
 
@@ -90,9 +96,9 @@ for i in "${!BINS[@]}"; do
     fi
 done
 
-echo "=========================================="
+echo "====================="
 echo "[SUMMARY TABLE]"
-echo "=========================================="
+echo "====================="
 printf "%-35s | %-10s | %-10s\n" "Technique" "Native" "PIN"
 echo "---------------------------------------------"
 for i in "${!BINS[@]}"; do
