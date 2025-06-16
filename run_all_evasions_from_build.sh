@@ -52,9 +52,9 @@ PIN_RESULTS=()
 PIN_DETECTED_NATIVE=0
 PIN_DETECTED_PIN=0
 
-echo "\n====================="
+echo "=========================================="
 echo "[ALL EVASIONS: Native Execution]"
-echo "====================="
+echo "=========================================="
 for i in "${!BINS[@]}"; do
     BIN="${BINS[$i]}"
     echo ""
@@ -71,9 +71,9 @@ for i in "${!BINS[@]}"; do
     fi
 done
 
-echo "====================="
+echo "=========================================="
 echo "[ALL EVASIONS: Under PIN]"
-echo "====================="
+echo "=========================================="
 for i in "${!BINS[@]}"; do
     BIN="${BINS[$i]}"
     echo ""
@@ -90,9 +90,9 @@ for i in "${!BINS[@]}"; do
     fi
 done
 
-echo "====================="
+echo "=========================================="
 echo "[SUMMARY TABLE]"
-echo "====================="
+echo "=========================================="
 printf "%-35s | %-10s | %-10s\n" "Technique" "Native" "PIN"
 echo "---------------------------------------------"
 for i in "${!BINS[@]}"; do
